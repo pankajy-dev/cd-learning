@@ -35,3 +35,46 @@ CI is "did my code work in isolation." CD deals with:
 
 Keep that framing in mind as you explore any CD tool: ask "how does it model environments," "how does it guarantee
 the same artifact everywhere," and "what's the rollback story."
+
+### Topology, in more detail
+
+CI just needs one thing: a runner that can check out code and run a build/test command. Every CI job
+looks basically the same regardless of what the app eventually runs on.
+
+CD has to actually land an artifact onto *real infrastructure*, and that infrastructure varies wildly
+per environment:
+
+- **dev** might be a single Kubernetes namespace in a shared cluster
+- **staging** might be its own dedicated k8s cluster
+- **prod** might be a fleet of VMs behind a load balancer in one region, and serverless (Lambda/Cloud
+  Functions) for another part of the system
+- a different service might deploy to a completely different cloud account, or even a different cloud
+  provider entirely
+
+A CD tool has to know, for *each* environment: how do I authenticate to it, what does "deploy" even
+mean there (`kubectl apply` vs. `scp` + restart a service vs. `aws lambda update-function-code`), what
+does "healthy" look like there, how do I query current state there. That's why CD tools have concepts
+like Argo CD's `destination.server` (which cluster), or Harness's "Infrastructure Definitions," or
+Spinnaker's "accounts" per cloud provider — they're all modeling "this environment is a different kind
+of place, with its own rules for deploying and verifying." A pure CI tool stretched into CD usually
+just shells out to whatever CLI matches that infra, with no shared abstraction — which is exactly the
+gap dedicated CD tools try to close.
+
+### Coordination, in more detail
+
+CI tests one build in isolation. CD often has to deploy a *change that spans several services at
+once* — e.g., a new API version in `order-service` that only works once `payment-service` has also
+shipped a compatible contract change.
+
+That raises problems CI never has to solve:
+- **Ordering** — payment-service must deploy before order-service, or the rollout breaks
+- **Dependency awareness** — the tool needs to know these two deploys are linked, not independent
+- **Rollback across services** — if order-service's deploy fails health checks, you may need to roll
+  back *both* services together to get back to a known-good combined state, not just the one that failed
+
+Plain CI tools (and even a lone Jenkins pipeline) usually have no native concept of "this is one
+logical release spanning N services" — that's a human/process problem unless the tool has a feature
+for it. This is specifically what CloudBees CD/RO's "release" object, or Spinnaker's multi-pipeline
+fan-out, or Harness's multi-service pipelines are built to solve: model the group of deployments as
+one unit with shared ordering and a shared rollback boundary, instead of N independent single-service
+pipelines that happen to run near each other in time.
