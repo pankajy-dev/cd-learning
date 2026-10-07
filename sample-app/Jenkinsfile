@@ -1,0 +1,87 @@
+pipeline {
+    agent any
+
+    environment {
+        REGISTRY   = 'localhost:5000'
+        IMAGE_NAME = 'cd-sample-app'
+        // the one artifact reference every later stage reuses — never rebuilt
+        IMAGE_REF  = "${REGISTRY}/${IMAGE_NAME}:${env.GIT_COMMIT ?: env.BUILD_NUMBER}"
+    }
+
+    stages {
+
+        stage('Build') {
+            steps {
+                dir('sample-app/app') {
+                    sh "docker build --build-arg APP_VERSION=${IMAGE_REF} -t ${IMAGE_REF} ."
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                dir('sample-app/app') {
+                    sh 'npm test'
+                }
+            }
+        }
+
+        stage('Publish') {
+            steps {
+                sh "docker push ${IMAGE_REF}"
+            }
+        }
+
+        stage('Deploy: Dev') {
+            steps {
+                sh "sample-app/deploy.sh dev ${IMAGE_REF} 3000"
+            }
+        }
+
+        stage('Smoke Test: Dev') {
+            steps {
+                sh "sample-app/smoke-test.sh 3000"
+            }
+        }
+
+        stage('Deploy: Staging') {
+            steps {
+                sh "sample-app/deploy.sh staging ${IMAGE_REF} 3001"
+            }
+        }
+
+        stage('Smoke Test: Staging') {
+            steps {
+                sh "sample-app/smoke-test.sh 3001"
+            }
+        }
+
+        stage('Promote to Prod?') {
+            steps {
+                // this is the Delivery vs. Deployment line: comment this out
+                // and prod deploy becomes fully automatic (Continuous Deployment)
+                input message: "Promote ${IMAGE_REF} to prod?", ok: 'Promote'
+            }
+        }
+
+        stage('Deploy: Prod (canary)') {
+            steps {
+                sh "sample-app/deploy.sh prod-canary ${IMAGE_REF} 3002"
+                sh "sample-app/smoke-test.sh 3002"
+            }
+        }
+
+        stage('Deploy: Prod (full)') {
+            steps {
+                sh "sample-app/deploy.sh prod ${IMAGE_REF} 3003"
+                sh "sample-app/smoke-test.sh 3003"
+            }
+        }
+    }
+
+    post {
+        failure {
+            echo "Pipeline failed — in a real system this triggers automatic rollback to the previous IMAGE_REF."
+        }
+    }
+}

@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  registry:
+    image: registry:2
+    container_name: cd-registry
+    ports:
+      - "5000:5000"
+
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17
+    container_name: cd-jenkins
+    privileged: true
+    user: root
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - $PWD:/workspace
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=true
+    depends_on:
+      - registry
+
+volumes:
+  jenkins_home:
