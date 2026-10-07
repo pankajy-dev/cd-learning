@@ -16,7 +16,7 @@ Grouped by theme, not alphabetically, so related terms sit together.
 - **Artifact** — the immutable build output: a container image, a jar, a tarball, a Helm chart. CD's core promise is you build it once and promote the *same* artifact.
 - **Artifact repository** — where built artifacts live (Nexus, Artifactory, container registries like ECR/GCR/Docker Hub).
 - **Immutable artifact / Build once, deploy many** — the principle that you never rebuild between environments; you only ever re-deploy the same bits. Rebuilding per environment is a classic anti-pattern because it breaks the guarantee that what you tested is what you shipped.
-- **Semantic versioning (SemVer)** / **Build number** / **Git SHA tagging** — common ways artifacts get identified across environments.
+- **Semantic versioning (SemVer)** / **Build number** / **Git SHA tagging** — common ways artifacts get identified across environments. See "SemVer in depth" below.
 
 ## Environments and promotion
 
@@ -52,3 +52,42 @@ Grouped by theme, not alphabetically, so related terms sit together.
 - **Fan-out / fan-in** — running parallel deploys to multiple targets then waiting for all to finish before proceeding.
 - **Pipeline template / reusable workflow** — a parameterized pipeline definition reused across many services (critical at enterprise scale — "how do 200 teams not each hand-roll their own pipeline").
 - **Multi-tenancy** — how a CD platform isolates teams/projects sharing the same control plane (RBAC, folders, namespaces).
+
+## SemVer in depth
+
+SemVer is `MAJOR.MINOR.PATCH` (e.g. `2.4.1`). The point isn't the format — it's that each number is a
+machine-readable compatibility promise, letting tools (package managers, dependency resolvers, deploy
+automation) make upgrade decisions without a human reading a changelog:
+
+- **MAJOR** — breaking change. Consumers must expect something to break across a major bump.
+- **MINOR** — new functionality, backward-compatible. Safe to upgrade without code changes.
+- **PATCH** — backward-compatible bug fix only. Should always be safe to take.
+
+### Where it gets interesting for CD specifically
+
+1. **SemVer is a promise about your public API, not about "what shipped."** Internal services deployed
+   via CD usually have no versioned public contract the way a library does — nothing is "consuming"
+   `order-service` the way `npm install` consumes a library. That's why CD pipelines typically tag
+   builds by **git SHA or build number**, not SemVer — immutability and traceability matter more than
+   compatibility semantics. SemVer tends to live at the edges: public APIs, SDKs, Helm chart versions,
+   container images meant to be consumed by someone else.
+
+2. **SemVer and "build once, deploy many" can conflict.** Bumping the version on every build — even
+   unreleased ones — breaks the idea that one immutable artifact gets promoted unchanged through
+   environments: you'd end up with artifact `1.2.0` in staging and a *different* artifact `1.2.1` in
+   prod, defeating traceability. The usual fix: tag the immutable artifact by SHA/build number for
+   internal promotion, and only mint a SemVer tag at the moment you cut an actual release — often a
+   separate, later git tag pointing at the exact commit/artifact already promoted.
+
+3. **Pre-release and build metadata extend the spec usefully in CD contexts** — `1.4.0-rc.1`,
+   `1.4.0-canary.3+build.217`. These distinguish "on the way to 1.4.0 but not official yet" without a
+   bespoke scheme, and some tools key canary/progressive-delivery logic directly off a pre-release tag.
+
+4. **Automatic SemVer bumping (semantic-release, conventional commits)** is a CD-adjacent feature worth
+   knowing, since competitor products often have it: parse commit messages (`feat:`, `fix:`,
+   `BREAKING CHANGE:`) to auto-decide the next version and auto-tag a release as a pipeline step —
+   turning "what version is this" from a human decision into automation.
+
+5. **The biggest practical gotcha**: SemVer is a convention, not an enforced guarantee. A mislabeled
+   `1.2.1` patch can still break you — so mature CD setups pair SemVer with other safety nets (contract
+   tests, canary analysis, feature flags) rather than trusting the version number alone to gate risk.
