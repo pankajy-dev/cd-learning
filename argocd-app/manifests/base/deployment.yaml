@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cd-sample-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cd-sample-app
+  template:
+    metadata:
+      labels:
+        app: cd-sample-app
+    spec:
+      containers:
+        - name: cd-sample-app
+          image: ghcr.io/REPLACE_ME/cd-sample-app:latest
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5

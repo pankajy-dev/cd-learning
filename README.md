@@ -13,7 +13,13 @@ Read in order:
 3. [`docs/03-pipeline-anatomy.md`](docs/03-pipeline-anatomy.md) — stages, gates, artifacts, environments, promotion
 4. [`docs/04-deployment-strategies.md`](docs/04-deployment-strategies.md) — blue/green, canary, rolling, feature flags
 5. [`docs/05-tool-landscape.md`](docs/05-tool-landscape.md) — feature comparison: Jenkins/CBCI, GitHub Actions, GitLab CI/CD, Argo CD, Spinnaker, Harness
-6. [`sample-app/`](sample-app/) — a real toy pipeline you run locally with Jenkins to see every concept in motion
+6. [`sample-app/`](sample-app/) + [`sample-app/SETUP.md`](sample-app/SETUP.md) — a real toy pipeline run locally with Jenkins: build once, gated promotion through dev/staging/prod
+7. [`docs/06-github-actions-tutorial.md`](docs/06-github-actions-tutorial.md) + [`.github/workflows/cd.yml`](.github/workflows/cd.yml) — the same app/pipeline shape, built with GitHub Actions jobs + Environments
+8. [`docs/07-argocd-tutorial.md`](docs/07-argocd-tutorial.md) + [`argocd-app/`](argocd-app/) — the same app again, this time deployed the GitOps/pull-based way with Argo CD
+
+All three tutorials deploy the exact same toy app, so you can directly compare how each tool models
+the same pipeline anatomy from [`docs/03-pipeline-anatomy.md`](docs/03-pipeline-anatomy.md): where the
+artifact gets built, how it's promoted, and where the approval gate lives.
 
 ## Why Jenkins first
 

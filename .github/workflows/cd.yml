@@ -1,0 +1,69 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sample-app/app/**'
+      - '.github/workflows/cd.yml'
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}/cd-sample-app
+
+jobs:
+  build-test-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_ref: ${{ steps.meta.outputs.ref }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run tests
+        run: node sample-app/app/server.test.js
+
+      - name: Compute immutable image ref
+        id: meta
+        run: echo "ref=${{ env.IMAGE }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push (built once, referenced everywhere below)
+        uses: docker/build-push-action@v5
+        with:
+          context: sample-app/app
+          build-args: APP_VERSION=${{ steps.meta.outputs.ref }}
+          push: true
+          tags: ${{ steps.meta.outputs.ref }}
+
+  deploy-dev:
+    needs: build-test-publish
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - run: echo "Deploying ${{ needs.build-test-publish.outputs.image_ref }} to dev (no gate)"
+
+  deploy-staging:
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - run: echo "Deploying ${{ needs.build-test-publish.outputs.image_ref }} to staging"
+
+  deploy-prod:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    # "environment: prod" is where the Continuous Delivery gate lives: configure
+    # this environment in GitHub repo settings with required reviewers, and this
+    # job will pause for manual approval before it runs — same role as Jenkins'
+    # `input` step, just managed through repo Settings > Environments instead of
+    # pipeline code.
+    environment: prod
+    steps:
+      - run: echo "Deploying ${{ needs.build-test-publish.outputs.image_ref }} to prod"

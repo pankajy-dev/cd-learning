@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cd-sample-app-prod
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/REPLACE_ME/cd-learning.git
+    targetRevision: main
+    path: argocd-app/manifests/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cd-prod
+  # No "automated" block here on purpose: prod syncs only when you click
+  # "Sync" in the UI/CLI (or run `argocd app sync`). That manual trigger
+  # is Argo CD's equivalent of a Continuous Delivery approval gate — the
+  # gate is "did a human decide to reconcile prod to match git," not a
+  # pipeline step.
+  syncOptions:
+    - CreateNamespace=true

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cd-sample-app
+spec:
+  selector:
+    app: cd-sample-app
+  ports:
+    - port: 80
+      targetPort: 3000
