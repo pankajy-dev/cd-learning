@@ -10,7 +10,7 @@ const server = http.createServer((req, res) => {
     return;
   }
   res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ message: `Hello from version ${VERSION}` }));
+  res.end(JSON.stringify({ message: `Hello from version v1 ${VERSION}` }));
 });
 
 server.listen(PORT, () => console.log(`listening on ${PORT}, version ${VERSION}`));
