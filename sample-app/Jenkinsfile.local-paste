@@ -12,7 +12,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                dir('sample-app/app') {
+                dir('/workspace/app') {
                     sh "docker build --build-arg APP_VERSION=${IMAGE_REF} -t ${IMAGE_REF} ."
                 }
             }
@@ -32,25 +32,25 @@ pipeline {
 
         stage('Deploy: Dev') {
             steps {
-                sh "sample-app/deploy.sh dev ${IMAGE_REF} 3000"
+                sh "/workspace/deploy.sh dev ${IMAGE_REF} 3000"
             }
         }
 
         stage('Smoke Test: Dev') {
             steps {
-                sh "sample-app/smoke-test.sh cd-sample-dev"
+                sh "/workspace/smoke-test.sh cd-sample-dev"
             }
         }
 
         stage('Deploy: Staging') {
             steps {
-                sh "sample-app/deploy.sh staging ${IMAGE_REF} 3001"
+                sh "/workspace/deploy.sh staging ${IMAGE_REF} 3001"
             }
         }
 
         stage('Smoke Test: Staging') {
             steps {
-                sh "sample-app/smoke-test.sh cd-sample-staging"
+                sh "/workspace/smoke-test.sh cd-sample-staging"
             }
         }
 
@@ -64,15 +64,15 @@ pipeline {
 
         stage('Deploy: Prod (canary)') {
             steps {
-                sh "sample-app/deploy.sh prod-canary ${IMAGE_REF} 3002"
-                sh "sample-app/smoke-test.sh cd-sample-prod-canary"
+                sh "/workspace/deploy.sh prod-canary ${IMAGE_REF} 3002"
+                sh "/workspace/smoke-test.sh cd-sample-prod-canary"
             }
         }
 
         stage('Deploy: Prod (full)') {
             steps {
-                sh "sample-app/deploy.sh prod ${IMAGE_REF} 3003"
-                sh "sample-app/smoke-test.sh cd-sample-prod"
+                sh "/workspace/deploy.sh prod ${IMAGE_REF} 3003"
+                sh "/workspace/smoke-test.sh cd-sample-prod"
             }
         }
     }

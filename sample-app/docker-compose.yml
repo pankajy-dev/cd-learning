@@ -6,6 +6,8 @@ services:
     container_name: cd-registry
     ports:
       - "5000:5000"
+    networks:
+      - cd-net
 
   jenkins:
     image: jenkins/jenkins:lts-jdk17
@@ -23,6 +25,12 @@ services:
       - JAVA_OPTS=-Djenkins.install.runSetupWizard=true
     depends_on:
       - registry
+    networks:
+      - cd-net
 
 volumes:
   jenkins_home:
+
+networks:
+  cd-net:
+    name: cd-net

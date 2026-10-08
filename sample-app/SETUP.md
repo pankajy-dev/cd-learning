@@ -35,13 +35,9 @@ docker exec -u root cd-jenkins bash -c "apt-get update && apt-get install -y doc
 
 - New Item → Pipeline → name it `cd-sample-pipeline`
 - Pipeline section → Definition: "Pipeline script from SCM" if you push this repo to git, OR
-  for a fast local test, choose "Pipeline script" and paste the contents of `Jenkinsfile` directly,
-  adjusting `dir('sample-app/app')` paths to match since there's no checkout step in that mode.
-- Simplest path for a first run: mount this repo into Jenkins (already done via `docker-compose.yml`'s
-  `$PWD:/workspace` volume) and point the job at `/workspace/Jenkinsfile` using "Pipeline script from SCM"
-  → SCM: None isn't an option, so for the quickest first run just paste the Jenkinsfile contents directly
-  into "Pipeline script" and change working dir references from `sample-app/app` to `/workspace/app`
-  and `sample-app/deploy.sh` to `/workspace/deploy.sh` etc.
+  for a fast local test, choose "Pipeline script" and paste the contents of `Jenkinsfile.local-paste`
+  directly — it's already pre-adjusted for this mode (paths point at `/workspace/...` since there's
+  no checkout step), unlike `Jenkinsfile` which uses `sample-app/...` paths for the git-flow case.
 
 ## 4. Run it
 

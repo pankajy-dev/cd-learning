@@ -12,6 +12,6 @@ CONTAINER_NAME="cd-sample-${ENV_NAME}"
 echo "Deploying ${IMAGE_REF} to ${ENV_NAME} on port ${PORT}"
 
 docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
-docker run -d --name "${CONTAINER_NAME}" -p "${PORT}:3000" "${IMAGE_REF}"
+docker run -d --name "${CONTAINER_NAME}" --network cd-net -p "${PORT}:3000" "${IMAGE_REF}"
 
 echo "${ENV_NAME} now running ${IMAGE_REF}"
