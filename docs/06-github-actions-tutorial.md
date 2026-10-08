@@ -51,8 +51,19 @@ Environments also give you:
 
 1. Push this repo to a GitHub repo you own.
 2. Settings → Environments → create `dev`, `staging`, `prod`. On `prod`, add yourself as a required reviewer.
-3. Settings → Actions → General → Workflow permissions → allow read/write (needed to push to GHCR).
-4. Push a change under `sample-app/app/` to `main` and watch the Actions tab: it'll run through dev
-   and staging automatically, then sit "Waiting" on `deploy-prod` until you approve it from the run page.
-5. Compare this pause to the Jenkins `input` step from the other tutorial — functionally identical,
+3. Give the workflow permission to push to GHCR — no PAT or manual secret needed, this uses the
+   token GitHub auto-generates per run (`secrets.GITHUB_TOKEN`, referenced in `cd.yml`'s
+   `docker/login-action` step), but by default that token is read-only:
+   - Settings → Actions → General → Workflow permissions → select "Read and write permissions."
+   - This is on top of (not instead of) the `permissions: packages: write` already declared in
+     `cd.yml` — the repo setting and the per-workflow `permissions:` block both have to allow it,
+     whichever is more restrictive wins.
+4. Push a change under `sample-app/app/` to `main` — e.g. edit the `Hello from version ${VERSION}`
+   message in `server.js` — and watch the Actions tab: it'll run through dev and staging
+   automatically, then sit "Waiting" on `deploy-prod` until you approve it from the run page.
+5. First successful push creates the GHCR package (`ghcr.io/<owner>/<repo>/cd-sample-app`) under your
+   account/org, defaulting to **private** — visible under your profile/org's "Packages" tab, not the repo.
+   If you want to pull it without auth later, you'll need to change its visibility there, or link it to
+   the repo (Package settings → "Connect repository") so repo collaborators inherit access automatically.
+6. Compare this pause to the Jenkins `input` step from the other tutorial — functionally identical,
    configured completely differently.
