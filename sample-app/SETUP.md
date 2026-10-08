@@ -68,6 +68,9 @@ artifact was promoted, not rebuilt, at every stage.
 ## Cleanup
 
 ```bash
-docker compose down -v
 docker rm -f cd-sample-dev cd-sample-staging cd-sample-prod-canary cd-sample-prod 2>/dev/null
+docker compose down -v
 ```
+
+(the app containers must come down first — they're attached to `cd-net`, so tearing down
+compose while they're still running leaves that network behind)
